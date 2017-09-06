@@ -14,7 +14,7 @@ Every 30 seconds (the poll interval we set in our Service's configuration):
 * The Operation should return a DLS.REST.Response message with the server's response as the ServerResponse property.
 * The BPL should store the server's response to the Context, convert it to an %Object, then trace all the entries that were returned.
 
-**_Note_**: The BPL uses 2016.1 JSON methods (e.g. .$fromJSON()). If you are running 2016.2 or higher, you'll have to change the code to use the updated methods (e.g. %FromJSON()).
+**_Note_**: The BPL uses 2016.1 JSON methods (e.g. .$fromJSON()). If you are running 2016.2 or higher, you'll have to change the code to use the updated methods (e.g. %FromJSON()). See [this post](https://community.intersystems.com/post/introducing-new-json-capabilities-cach%C3%A9-20161) for more info.
 
 ## How to use the DLS.REST.Operation with your own BPL
 1. Add an instance of DLS.REST.OperationV2 to your production for each rest request you would like to make.
