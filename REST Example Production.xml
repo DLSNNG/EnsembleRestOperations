@@ -1,0 +1,629 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-05 15:38:20">
+<Class name="DLS.HTTP.OutboundAdapter">
+<Description>
+Modifies EnsLib.HTTP.OutboundAdapter to allow setting of content type used
+when making %Net.HTTPRequest</Description>
+<Super>EnsLib.HTTP.OutboundAdapter</Super>
+<TimeChanged>64531,32654.280938</TimeChanged>
+<TimeCreated>64469,44057.028072</TimeCreated>
+
+<Property name="ContentType">
+<Description>
+Content Type Header to be used with HTTP request.</Description>
+<Type>%String</Type>
+<InitialExpression>"application/json"</InitialExpression>
+<Parameter name="MAXLEN" value="1000"/>
+</Property>
+
+<Property name="CredentialsFallback">
+<Description>
+Fallback credentials to use in case primary credentials rejected</Description>
+<Type>%String</Type>
+<InitialExpression>"None"</InitialExpression>
+</Property>
+
+<Parameter name="SETTINGS">
+<Description>
+These are the production settings for this object</Description>
+<Default><![CDATA[RegistryID:Basic:selector?context={Ens.ServiceRegistry.External.ContextSearch/Services?Protocols_1=REST&Protocols_2=HTTP},HTTPServer:Basic,HTTPPort:Basic,SSLConfig:Connection:sslConfigSelector,SSLCheckServerIdentity:Connection,ProxyServer:Connection,ProxyPort:Connection,ProxyHTTPS:Connection,URL:Basic,Credentials:Basic:credentialsSelector,CredentialsFallback:Basic:credentialsSelector,ContentType:Basic,UseCookies,ConnectTimeout:Connection,ResponseTimeout:Connection]]></Default>
+</Parameter>
+
+<Method name="SendFormDataArray">
+<Description><![CDATA[
+Send a <var>pOp</var> request ("POST","GET" or "PUT") to the configured Server, Port and URL, sending form data to the named form variables.
+<var>pFormVarNames</var> is a comma-separated list of form variable names to use. For each name in the list,
+a <var>pData</var> argument should be supplied. The <var>pData</var> argument is an array. The top node of the array is not used. Each sub-node
+is subscripted by the index of the
+form variable from the <var>pFormVarNames</var> list that it corresponds to. The value at that subscript
+is the form data for that variable. For single-valued form variables this value is just the value. In
+this case this node should have no sub-nodes.
+For multiple valued form variables, the value at this node should be the count of form variable values,
+and each of the values for this form variable should appear in a sub-node, subscripted by its position in the node.
+For special needs, the <var>pHttpRequestIn</var> argument can be used to pre-populate properties of the %Net.HTTPRequest object used to send the HTTP request.]]></Description>
+<FormalSpec><![CDATA[*pHttpResponse:%Net.HttpResponse,pOp:%String,pHttpRequestIn:%Net.HttpRequest,pFormVarNames:%String="",&pData,pURL:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set $ZT="Trap",tSC=$$$OK
+	Kill pHttpResponse Set pHttpResponse=$$$NULLOREF
+	Set pOp=$ZCVT(pOp,"L"),$E(pOp,1,1)=$ZCVT($E(pOp,1,1),"U")
+	do {
+		#; Create an Http Request Object
+		Set tHttpRequest=$S($$$IsdefObject(pHttpRequestIn):pHttpRequestIn,1:##class(%Net.HttpRequest).%New())  $$$ASSERT($IsObject(tHttpRequest)&&tHttpRequest.%IsA("%Net.HttpRequest"))
+
+		#; Send supersession
+		Try {
+			If ..BusinessHost.SendSuperSession,(tHttpRequest.GetHeader("VND.Intersystems.Ensemble.SuperSession")="") {
+				If ..BusinessHost.%SuperSession="" {
+					Set ..BusinessHost.%SuperSession = $zu(110)_"^"_$p($zu(86),"*",2)_"^"_$ZNSPACE_"^"_..BusinessHost.%SessionId
+				}
+				Do tHttpRequest.SetHeader("VND.InterSystems.Ensemble.SuperSession",..BusinessHost.%SuperSession)
+			}
+		} Catch {}
+
+		#; Fill in the server, port etc.
+		Set tHttpRequest.Server=..HTTPServer, tHttpRequest.Port=..HTTPPort
+		Set tHttpRequest.SSLConfiguration=..SSLConfig, tHttpRequest.Https=(""'=..SSLConfig)
+		Set tHttpRequest.SSLCheckServerIdentity=..SSLCheckServerIdentity
+		Set tHttpRequest.ProxyServer=..ProxyServer, tHttpRequest.ProxyPort=..ProxyPort
+		Set tHttpRequest.ProxyHTTPS=..ProxyHTTPS
+		Set tHttpRequest.OpenTimeout=$S(..ConnectTimeout=-1:2123456789,1:..ConnectTimeout)
+		Set tHttpRequest.Timeout=$S(..ResponseTimeout=-1:2123456789,1:..ResponseTimeout)
+		
+		/*
+			Begin DLS Modification - set the Content Type of the request
+		*/
+		
+		Set tHttpRequest.ContentType = ..ContentType
+		
+		/*
+			End DLS Modification
+		*/
+
+		If '$IsObject(..%CredentialsObj) Do ..CredentialsSet(..Credentials) If '$IsObject(..%CredentialsObj) { Set tSC=$$$EnsError($$$EnsErrNoCredentials,..Credentials) Quit }
+		Set tHttpRequest.Username=..%CredentialsObj.Username,tHttpRequest.Password=..%CredentialsObj.Password		
+
+		#; Walk the pData sub-nodes and set values for form data variables
+		Set kVal = "" For { Set kVal=$O(pData(kVal)) Quit:""=kVal
+			#; Allow indexing by position in pFormVarNames list, or by Form variable name itself
+			Set tVarname=$S(kVal=+kVal:$P(pFormVarNames,",",kVal),1:kVal)
+			Set:""=tVarname&&(""'=$G(kLastVal)) tVarname = $P(pFormVarNames,",",kLastVal)
+			If ""=tVarname { ; if first name in list and name empty
+				If $IsObject(pData(kVal)) && (pData(kVal).%Extends("%Stream.Object")||pData(kVal).%Extends("%IO.I.Stream")) {
+					Set tLibStream=pData(kVal).%Extends("%Library.AbstractStream")
+					If ""=..SkipBodyAttrs && tLibStream {
+						Set tHttpRequest.EntityBody = pData(kVal)
+					} Else {
+						Do tHttpRequest.EntityBody.CopyFrom(pData(kVal))
+						If "*"'=$ZStrip(..SkipBodyAttrs,"<>W") && tLibStream {
+							Set tCnt=$L(..SkipBodyAttrs,",")  For i=1:1:tCnt { Set tSkip=$ZCVT($ZStrip($P(..SkipBodyAttrs,",",i),"<>W"),"L")  Continue:""=tSkip  Set skips(tSkip)="" }
+							Set name=""  For { Set name=pData(kVal).NextAttribute(name)  Quit:""=name
+								Do:'$D(skips($ZCVT(name,"L"))) tHttpRequest.EntityBody.SetAttribute(name,pData(kVal).GetAttribute(name))
+							}
+						}
+					}
+				}
+				Else { Do tHttpRequest.EntityBody.Write(pData(kVal)) }
+				Continue
+			}
+			Set kLastVal=kVal
+			If $D(pData(kVal),tValue)=1 { // Has no sub-nodes
+				If pOp="Post" { Do tHttpRequest.InsertFormData(tVarname,tValue) }
+				Else { Do tHttpRequest.InsertParam(tVarname,tValue) }
+			} Else {
+				#; Walk the sub-subnodes for multi-valued form vars
+				Set kSubVal = "" For { Set kSubVal=$O(pData(kVal,kSubVal),1,tSubValue) Quit:""=kSubVal
+					If pOp="Post" Do tHttpRequest.InsertFormData(tVarname,tSubValue)
+					Else  Do tHttpRequest.SetParam(tVarname,tSubValue,kSubVal)
+				}
+			}
+		}
+		#; Set the Cookies for this domain / server
+		If ..UseCookies {
+			Set kCookie="" For { Set kCookie = $O(..%Cookies(..HTTPServer,kCookie)) Quit:""=kCookie
+				Set lCookie=..%Cookies(..HTTPServer,kCookie)
+				$$$sysTRACE("Sending stored Cookie "_kCookie_": ("_$LI(lCookie,1)_":"_$LI(lCookie,2)_":"_$LI(lCookie,3)_":"_$LI(lCookie,4)_":"_$LI(lCookie,5)_":"_$LI(lCookie,6)_")")
+				#;lCookie=$LB(1:name, 2:domain, 3:path, 4:value, 5:expires, 6:secure)
+				Do tHttpRequest.InsertCookie($LI(lCookie,1),$LI(lCookie,4),$LI(lCookie,3),..HTTPServer,$LG(lCookie,5),$LG(lCookie,6))
+			}
+		}
+		#; Send the Request
+		$$$sysTRACE("About to send "_pOp_$S(""'=..ProxyServer&&..ProxyHTTPS:" https ",1:" ")_"request to "_..GetAddress($G(pURL,..URL)))
+		Set tSC=tHttpRequest.Send($ZCVT(pOp,"U"),$G(pURL,..URL),..#DEBUG)
+
+		#; Retrieve the response
+		Set pHttpResponse=tHttpRequest.HttpResponse
+
+		If $$$ISOK(tSC) && (+pHttpResponse.StatusCode'?1"2"2N) Set tSC=$$$ERROR($$$EnsErrHTTPStatus,pHttpResponse.StatusCode,pHttpResponse.StatusLine)
+		#; NO Quit on error; get those cookies anyway if possible
+
+		#; Extract Cookies from the response
+		If ..UseCookies {
+			#; Filter out expired cookies for this domain, add new ones
+			Kill ..%Cookies(..HTTPServer)
+			If tHttpRequest.GetFullCookieList(.tCookies) {
+				#;Merge ..%Cookies(..HTTPServer) = tCookies
+				Set kCookie="" For { Set kCookie = $O(tCookies(kCookie)) Quit:""=kCookie
+					Set lCookie=tCookies(kCookie)
+					#;lCookie=$LB(1:name, 2:domain, 3:path, 4:value, 5:expires, 6:secure)
+					$$$sysTRACE($S($LI(lCookie,2)=..HTTPServer:"",1:"NOT ")_"Storing Cookie "_kCookie_": ("_$LI(lCookie,1)_":"_$LI(lCookie,2)_":"_$LI(lCookie,3)_":"_$LI(lCookie,4)_":"_$LI(lCookie,5)_":"_$LI(lCookie,6)_")")
+					Set:$LI(lCookie,2)=..HTTPServer ..%Cookies(..HTTPServer,kCookie)=lCookie
+				}
+			}
+		}
+	} while 0
+	Set:($$$ISOK(tSC)&&(503=+pHttpResponse.StatusCode))||$$$StatusEquals(tSC,$$$HttpRequestConnect,$$$CSPTimeout) ..BusinessHost.Retry = 1
+Exit
+	Quit tSC
+Trap
+	Set $ZT="",tSC=$$$EnsSystemError
+	Goto Exit
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="DLS.REST.Example.BPL">
+<Description>
+Example BPL to demonstrate usage of DLS.REST.Operation</Description>
+<Super>Ens.BusinessProcessBPL</Super>
+<TimeChanged>64531,54919.584335</TimeChanged>
+<TimeCreated>64531,46782.197564</TimeCreated>
+
+<XData name="BPL">
+<Description>
+BPL Definition</Description>
+<XMLNamespace>http://www.intersystems.com/bpl</XMLNamespace>
+<Data><![CDATA[
+<process language='objectscript' request='Ens.StringRequest' response='Ens.StringResponse' height='2000' width='2000' >
+<context>
+<property name='GetCommentsResponseString' type='%String' instantiate='0' >
+<parameters>
+<parameter name='MAXLEN'  value='2500' />
+</parameters>
+</property>
+</context>
+<sequence xend='200' yend='550' >
+<call name='Get Comments by PostId' target='RestExampleOperation' async='0' timeout='60' xpos='200' ypos='250' >
+<annotation><![CDATA[Makes a REST request to http://jsonplaceholder.typicode.com/comments?postId=X
+
+Where X is the stringValue of the request]]]]><![CDATA[></annotation>
+<request type='DLS.REST.Request' >
+<assign property="callrequest.FormVariables" value="&quot;postId=&quot;_request.StringValue_&quot;, test=testing&quot;" action="set" >
+<annotation><![CDATA[Pass in FormVariables to REST Operation based on the StringValue of our Ens.StringRequest]]]]><![CDATA[></annotation>
+</assign>
+</request>
+<response type='DLS.REST.Response' >
+<assign property="context.GetCommentsResponseString" value="callresponse.ServerResponse" action="set" >
+<annotation><![CDATA[Save server response to our BPL Context]]]]><![CDATA[></annotation>
+</assign>
+</response>
+</call>
+<trace name='Trace Comments' value='"Server responded with: "_context.GetCommentsResponseString' xpos='200' ypos='350' />
+<code name='Trace Posts' xpos='200' ypos='450' >
+<annotation><![CDATA[Use ServerResponse to construct an object and loop through properties.]]]]><![CDATA[></annotation>
+<![CDATA[
+  Set responseString = context.GetCommentsResponseString
+  Set responseObj = {}.$fromJSON(responseString)
+  Set iter = responseObj.$getIterator()
+  While iter.$getNext(.key, .comment) {
+    $$$TRACE("Comment with ID "_comment.id_" has body of "_comment.body)
+  }]]]]><![CDATA[>
+</code>
+</sequence>
+</process>
+]]></Data>
+</XData>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+</Storage>
+</Class>
+
+
+<Class name="DLS.REST.Example.InboundAdapter">
+<Description>
+Example Inbound Adapter to demonstrate DLS.REST.Operation usage</Description>
+<Super>Ens.InboundAdapter</Super>
+<TimeChanged>64531,46724.837964</TimeChanged>
+<TimeCreated>64531,46690.932051</TimeCreated>
+
+<Parameter name="SERVICEINPUTCLASS">
+<Description>
+Set the class that will be returned as Input to our Service</Description>
+<Default>Ens.StringRequest</Default>
+</Parameter>
+
+<Method name="OnTask">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set status = $$$OK
+	// This is where the real service would loop through globals or files and put their values into a message
+	// We're just pretending though, so we'll use a for loop and just pass the value of i into our message
+	For i=0:1:10 {
+		// Create new Message to pass to Service
+		Set tMsgIn = ##class(Ens.StringRequest).%New()
+		Set tMsgIn.StringValue = i
+		// Send the message to our Service for processing
+		Set tSC=..BusinessHost.ProcessInput(tMsgIn)
+		// Handle errors
+		If $$$ISERR(tSC) { Set status = tSC Break } 
+	}
+		
+	// Tell the Business Service to wait for the next call interval
+	// (Otherwise it will continuously call OnTask() once finished)
+	Set ..BusinessHost.%WaitForNextCallInterval = 1
+	Quit status
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="DLS.REST.Example.Service">
+<Description>
+Example service to demonstrate DLS.REST.Operation usage</Description>
+<Super>Ens.BusinessService</Super>
+<TimeChanged>64531,51698.703527</TimeChanged>
+<TimeCreated>64531,46307.538456</TimeCreated>
+
+<Parameter name="ADAPTER">
+<Default>DLS.REST.Example.InboundAdapter</Default>
+</Parameter>
+
+<Property name="TargetConfigNames">
+<Description>
+Configuration item(s) to which to send messages</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="1000"/>
+</Property>
+
+<Parameter name="SETTINGS">
+<Default><![CDATA[TargetConfigNames:Basic:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?targets=1&productionName=@productionId}]]></Default>
+</Parameter>
+
+<Method name="OnProcessInput">
+<FormalSpec>pInput:Ens.StringRequest,pOutput:%RegisteredObject</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	$$$TRACE("Calling "_$CLASSNAME($THIS))
+	// Loop through targets and send our input to them.
+	// Input is just a dummy value at the moment, used to trigger operations at a set interval
+	For iTarget=1:1:$L(..TargetConfigNames, ",") { Set tOneTarget=$ZStrip($P(..TargetConfigNames,",",iTarget),"<>W")  Continue:""=tOneTarget
+		$$$sysTRACE("Calling business operation '"_tOneTarget_"'")
+		Set tSC=..SendRequestSync(tOneTarget,pInput)
+	}
+	Quit tSC
+]]></Implementation>
+</Method>
+
+<Method name="OnGetConnections">
+<Description>
+Return an array of connections for drawing lines on the config diagram</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>*pArray:%String,pItem:Ens.Config.Item</FormalSpec>
+<Implementation><![CDATA[
+	Do ##super(.pArray,pItem)
+	If pItem.GetModifiedSetting("TargetConfigNames",.tValue) {
+		For i=1:1:$L(tValue,",") { Set tOne=$ZStrip($P(tValue,",",i),"<>W")  Continue:""=tOne  Set pArray(tOne)="" }
+	}
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="DLS.REST.OperationV2">
+<Description>
+Extension of EnsLib.REST.Operation that uses DLS.HTTP.OutboundAdapter to 
+Allow setting of Content Type as well as some other common features.
+
+It expects to be passed a DLS.REST.Request containing either a FormVariables string or a JSON payload
+It returns a DLS.REST.Response containing the ServerResponse string
+
+Developers should aim to handle the request/response through the BPL logic, however a few hooks are 
+provided for situations where this needs to be done through the operation 
+(for example utilizing the adapter's credentialsObj).</Description>
+<Super>EnsLib.REST.Operation</Super>
+<TimeChanged>64531,56260.952309</TimeChanged>
+<TimeCreated>64531,48013.725935</TimeCreated>
+
+<Parameter name="ADAPTER">
+<Description>
+The outbound adapter used to handle our HTTP requests. Use this instead of EnsLib.HTTP.OutboundAdapter 
+so we can set Content Type of POST requests to 'application/json'</Description>
+<Default>DLS.HTTP.OutboundAdapter</Default>
+</Parameter>
+
+<Parameter name="SETTINGS">
+<Default>Action:Basic</Default>
+</Parameter>
+
+<Property name="Action">
+<Description>
+The HTTP verb to be used when sending a REST request</Description>
+<Type>%String</Type>
+<InitialExpression>"GET"</InitialExpression>
+<Parameter name="VALUELIST" value=",GET,POST,PUT,DELETE"/>
+</Property>
+
+<Property name="AttemptNumber">
+<Description>
+Flag used to track the number of attempts made</Description>
+<Type>%Integer</Type>
+<InitialExpression>1</InitialExpression>
+</Property>
+
+<Method name="PopulateFormVariables">
+<Description>
+Developers may override this method in order to pull form variables from the request message.
+The output string will be passed to the Adapter's Get(), Post(), Put(), or Delete() request as
+the pFormVarNames variable. See EnsLib.HTTP.OutboundAdapter for further documentation.</Description>
+<FormalSpec>pRequest:DLS.REST.Request</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	// We simply return the form variables property of our DLS.REST.Request, however this hook allows
+	// other developers to modify how the message is processed.
+	Quit pRequest.FormVariables
+]]></Implementation>
+</Method>
+
+<Method name="PopulatePayload">
+<Description>
+Developers may override this method in order to populate a payload object based on the
+values provided in the request message. The Object output by this method will be passed to the
+Adapter's Get(), Post(), Put(), or Delete() request as the pData variable.
+See EnsLib.HTTP.OutboundAdapter for further documentation.</Description>
+<FormalSpec>pRequest:DLS.REST.Request</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	// We simply return the Payload property of our DLS.REST.Request, however this hook allows
+	// other developers to modify how the message is processed.
+	Quit pRequest.Payload
+]]></Implementation>
+</Method>
+
+<Method name="HandleResponse">
+<Description>
+Developers may override this method in order to update the Ens.Response message based on the data
+retreived from the Server. pServerResponse will be an object constructed from the JSON string that
+the server provided.</Description>
+<FormalSpec>pServerResponse:%String</FormalSpec>
+<ReturnType>DLS.REST.Response</ReturnType>
+<Implementation><![CDATA[
+	// We simply set the JSON string as our ServerResponse property in the 
+	// DLS.REST.Response message, however this hook allows other developers to modify how the response
+	// is handled. 
+	Set responseString = pServerResponse
+	// Log an Error if we're within the 100,000 character limit of our ServerResponse property
+	$$$TRACE("Response String is "_$LENGTH(responseString)_" characters long")
+	If $LENGTH(responseString) > 100000 {
+		$$$LOGERROR("Server's response is greater than 100,000 characters long and cannot be saved to the Ensemble Response Message.")
+	}
+	// Instantiate our Ens.Response message
+	Set ensResponse = ##class(DLS.REST.Response).%New()
+	// Set the ServerResponse property of our DLS.REST.Response to the server's responseString
+	Set ensResponse.ServerResponse = pServerResponse
+	Quit ensResponse
+]]></Implementation>
+</Method>
+
+<Method name="RetryRequired">
+<Description>
+Developers may override this method in order to provide their own logic for determining whether
+another (potentially modified) request should be made to the REST endpoint. Any modifications to
+the payload or form variables on a retry should be handled via the PopulateFormVariables() 
+and PopulatePayload() methods (with conditional logic based on the AttemptNumber) </Description>
+<FormalSpec>pServerResponse:%String</FormalSpec>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+	// Return false by default, but this hook allows developers to provide
+	// their own logic on when a retry should be attmepted
+	Return 0
+]]></Implementation>
+</Method>
+
+<Method name="OnMessage">
+<FormalSpec>pRequest:DLS.REST.Request,pResponse:DLS.REST.Response</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	$$$TRACE("Calling OnMessage of "_$CLASSNAME($THIS))
+	
+	//Set up the form variables that will be passed into our HTTP request
+	$$$TRACE("Calling PopulateFormVariables of "_$CLASSNAME($THIS))
+	Set formVariables = ..PopulateFormVariables(pRequest)
+	$$$TRACE("Form variables are "_formVariables)
+	
+	// Set up the payload that will be passed in as our HTTP request body
+	$$$TRACE("Calling PopulatePayload of "_$CLASSNAME($THIS))
+	Set payload = ..PopulatePayload(pRequest)
+	$$$TRACE("Assigning payload as HTTP request body "_payload)
+	
+	// Send appropriate request type to Server depending on the selected Action
+	If ..Action = "POST" {
+		$$$TRACE("Sending POST to "_..Adapter.HTTPServer_"/"_..Adapter.URL)
+		Set status = ..Adapter.Post(.tHttpResponse, formVariables, payload)
+	}
+	ELSEIF ..Action = "GET" {
+		// Save original URL to restore to later
+		Set oldUrl = ..Adapter.URL
+		Set queryParams = $REPLACE(formVariables, ",", "&") // replace commas with "&"
+		Set queryParams = $REPLACE(queryParams, " ", "") // remove empty spaces
+		// Set our adapter's URL to include the query params
+		Set ..Adapter.URL = oldUrl_"?"_queryParams
+		$$$TRACE("Sending GET to "_..Adapter.HTTPServer_"/"_..Adapter.URL)
+		Set status = ..Adapter.Get(.tHttpResponse, formVariables, payload)
+		// Revert the adapter's URL to the original state (without query params)
+		Set ..Adapter.URL = oldUrl
+	}
+	ELSEIF ..Action = "PUT" {
+		$$$TRACE("Sending PUT to "_..Adapter.HTTPServer_"/"_..Adapter.URL)
+		Set status = ..Adapter.Put(.tHttpResponse, formVariables, payload)
+	}
+	ELSEIF ..Action = "DELETE" {
+		$$$TRACE("Sending DELETE to "_..Adapter.HTTPServer_"/"_..Adapter.URL)
+		Set status = ..Adapter.Delete(.tHttpResponse, formVariables, payload)
+	}
+	ELSE {
+		Set status = $$$ERROR(5001, "No Action Selected for REST Operation")	
+	}
+	
+	// Save response string to variable
+	Set responseString = tHttpResponse.Data.Read(100000) //TODO: need to determine max length of string that can be sent and update this accordingly
+	$$$TRACE("Server Response = "_responseString)
+	
+	// Check if retry required
+	If ..RetryRequired(responseString) {
+		// increment attempt number
+		Set ..AttemptNumber = ..AttemptNumber + 1
+		// use recursive function to loop until RetryRequired() returns false
+		Set status = ..OnMessage(pRequest, pResponse)
+		Quit status
+	}
+	
+	// Handle Response Object
+	$$$TRACE("Calling HandleResponse of "_$CLASSNAME($THIS))
+	Set pResponse = ..HandleResponse(responseString)
+	
+	// Cleanup/reset state
+	Do ..OnMessageProcessed()
+	
+	Quit status
+]]></Implementation>
+</Method>
+
+<Method name="GetWithQueryParams">
+<Description>
+Construct URL with Form Variables appended as query params</Description>
+<FormalSpec>formVariables:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+</Method>
+
+<Method name="OnMessageProcessed">
+<Description>
+Reset after message has been processed</Description>
+<Implementation><![CDATA[	Set ..AttemptNumber = 1
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="DLS.REST.Request">
+<Description>
+Holds relevant information used to initiate a REST request</Description>
+<Super>Ens.Request</Super>
+<TimeChanged>64470,40012.860677</TimeChanged>
+<TimeCreated>64469,43448.204874</TimeCreated>
+
+<Property name="FormVariables">
+<Type>%String</Type>
+</Property>
+
+<Property name="Payload">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="25000"/>
+</Property>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DefaultData>RequestDefaultData</DefaultData>
+<Data name="RequestDefaultData">
+<Subscript>"Request"</Subscript>
+<Value name="1">
+<Value>FormVariables</Value>
+</Value>
+<Value name="2">
+<Value>Payload</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Class name="DLS.REST.Response">
+<Description>
+Holds information passed back by the Server as a response to a REST request
+(Stored as a Cache Object)</Description>
+<Super>Ens.Response</Super>
+<TimeChanged>64498,53837.502611</TimeChanged>
+<TimeCreated>64469,43527.969022</TimeCreated>
+
+<Property name="ServerResponse">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="100000"/>
+</Property>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DefaultData>ResponseDefaultData</DefaultData>
+<Data name="ResponseDefaultData">
+<Subscript>"Response"</Subscript>
+<Value name="1">
+<Value>ServerResponse</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+
+
+<Project name="EnsExportItem_2017-09-05 15-37-58_494-10" LastModified="2017-09-05 15:38:20.836378">
+  <ProjectDescription>Studio Project generated starting from Ensemble Production Configuration Item 'DLS.PRODUCTION.Development : RestExampleBPL' at 2017-09-06 01:37:58.494 UTC</ProjectDescription>
+  <Items>
+    <ProjectItem name="DLS.HTTP.OutboundAdapter" type="CLS"></ProjectItem>
+    <ProjectItem name="DLS.REST.Example.BPL" type="CLS"></ProjectItem>
+    <ProjectItem name="DLS.REST.Example.InboundAdapter" type="CLS"></ProjectItem>
+    <ProjectItem name="DLS.REST.Example.Service" type="CLS"></ProjectItem>
+    <ProjectItem name="DLS.REST.OperationV2" type="CLS"></ProjectItem>
+    <ProjectItem name="DLS.REST.Request" type="CLS"></ProjectItem>
+    <ProjectItem name="DLS.REST.Response" type="CLS"></ProjectItem>
+    <ProjectItem name="Settings:RestExampleBPL.PTD" type="PTD"></ProjectItem>
+    <ProjectItem name="Settings:RestExampleOperation.PTD" type="PTD"></ProjectItem>
+    <ProjectItem name="Settings:RestExampleService.PTD" type="PTD"></ProjectItem>
+    <ProjectItem name="EnsExportNotes.EnsExportItem_2017-09-05 15-37-58_494-10.PTD" type="PTD"></ProjectItem>
+  </Items>
+</Project>
+
+
+<Document name="EnsExportNotes.EnsExportItem_2017-09-05 15-37-58_494-10.PTD"><ProjectTextDocument name="EnsExportNotes.EnsExportItem_2017-09-05 15-37-58_494-10" description="Export Notes for export EnsExportItem_2017-09-05 15-37-58_494-10">
+<![CDATA[<Deployment>
+<Creation>
+<Machine>HS-TEST.DLABS.COM</Machine>
+<Instance>HEALTHSHARE</Instance>
+<Namespace>ENSDEV</Namespace>
+<SourceProduction>DLS.PRODUCTION.Development</SourceProduction>
+<Username>nathann</Username>
+<UTC>2017-09-06 01:38:20.834</UTC>
+</Creation>
+<Notes>
+</Notes>
+<Contents>
+<ExportProject>EnsExportItem_2017-09-05 15-37-58_494-10</ExportProject>
+<Item num="1">DLS.HTTP.OutboundAdapter.CLS</Item>
+<Item num="2">DLS.REST.Example.BPL.CLS</Item>
+<Item num="3">DLS.REST.Example.InboundAdapter.CLS</Item>
+<Item num="4">DLS.REST.Example.Service.CLS</Item>
+<Item num="5">DLS.REST.OperationV2.CLS</Item>
+<Item num="6">DLS.REST.Request.CLS</Item>
+<Item num="7">DLS.REST.Response.CLS</Item>
+<Item num="8">Settings:RestExampleBPL.PTD</Item>
+<Item num="9">Settings:RestExampleOperation.PTD</Item>
+<Item num="10">Settings:RestExampleService.PTD</Item>
+</Contents>
+<ProductionClassInExport></ProductionClassInExport>
+</Deployment>
+
+]]></ProjectTextDocument>
+</Document>
+
+<Document name="Settings:RestExampleBPL.PTD"><ProjectTextDocument name="Settings:RestExampleBPL" description="Settings for RestExampleBPL in Production DLS.PRODUCTION.Development">
+<![CDATA[<Item Name="RestExampleBPL" Category="Example" ClassName="DLS.REST.Example.BPL" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule=""></Item>
+]]></ProjectTextDocument>
+</Document>
+
+<Document name="Settings:RestExampleOperation.PTD"><ProjectTextDocument name="Settings:RestExampleOperation" description="Settings for RestExampleOperation in Production DLS.PRODUCTION.Development">
+<![CDATA[<Item Name="RestExampleOperation" Category="Example" ClassName="DLS.REST.OperationV2" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="true" Schedule=""><Setting Target="Adapter" Name="HTTPServer">jsonplaceholder.typicode.com</Setting><Setting Target="Adapter" Name="SSLCheckServerIdentity">0</Setting><Setting Target="Adapter" Name="URL">comments</Setting></Item>
+]]></ProjectTextDocument>
+</Document>
+
+<Document name="Settings:RestExampleService.PTD"><ProjectTextDocument name="Settings:RestExampleService" description="Settings for RestExampleService in Production DLS.PRODUCTION.Development">
+<![CDATA[<Item Name="RestExampleService" Category="Example" ClassName="DLS.REST.Example.Service" PoolSize="1" Enabled="false" Foreground="false" Comment="" LogTraceEvents="false" Schedule=""><Setting Target="Host" Name="TargetConfigNames">RestExampleBPL</Setting><Setting Target="Adapter" Name="CallInterval">30</Setting></Item>
+]]></ProjectTextDocument>
+</Document></Export>
