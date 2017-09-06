@@ -11,6 +11,7 @@ Every 30 seconds (the poll interval we set in our Service's configuration):
 * The Service should loop from 1-10 and pass a new Ens.StringRequest to our BPL, with the StringValue set to the current iteration (e.g. 1 for the first, 2 for the second, etc.)
 * The BPL should call the Operation, passing in a DLS.REST.Request message
 * The Operation should read the FormVariables property of this message and perform a GET request using the FormVariables as query params.
+* The Operation should return a DLS.REST.Response message with the server's response as the ServerResponse property.
 * The BPL should store the server's response to the Context, convert it to an %Object, then trace all the entries that were returned.
 
 ## Usage
