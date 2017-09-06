@@ -17,6 +17,6 @@ Every 30 seconds (the poll interval we set in our Service's configuration):
 ## How to use the DLS.REST.Operation with your own BPL
 1. Add an instance of DLS.REST.OperationV2 to your production for each rest request you would like to make.
 2. Set the Server and URL to the appropriate endpoint for each Operation.
-3. Create a BPL that can call each REST Operation. If any Operations depend on the response of another, make sure you set those as synchronous so the run in the correct order. Store any relevant server responses to the BPL context and use a code block to perform any custom handling. 
-..* **_Note_**: If your JSON payload requires user credentials that you would rather not expose as plaintext, extend the DLS.REST.OperationV2 class and override the ConstructPayload() method. This will allow you to hook into the ..Adapter.%CredentialsObj.Username and ..Adapter.%CredentialsObj.Password for the credentials set in your Operation's settings tab.
+3. Create a BPL that can call each REST Operation. If any Operations depend on the response of another, make sure you set those as synchronous so the run in the correct order. Store any relevant server responses to the BPL context and use a code block to perform any custom handling.
+  * **_Note_**: If your JSON payload requires user credentials that you would rather not expose as plaintext, extend the DLS.REST.OperationV2 class and override the ConstructPayload() method. This will allow you to hook into the ..Adapter.%CredentialsObj.Username and ..Adapter.%CredentialsObj.Password for the credentials set in your Operation's settings tab.
 4. Create the Service that will trigger your BPL.
