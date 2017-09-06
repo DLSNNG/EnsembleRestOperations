@@ -3,7 +3,7 @@
 ## Running the Example BPL
 
 1. Clone Repo and place REST Example Production.xml file on your Cache Server
-2. Follow instructions from [this post] (https://community.intersystems.com/post/how-export-and-import-ensemble-components-and-productions) to import the classes
+2. Follow instructions from [this post](https://community.intersystems.com/post/how-export-and-import-ensemble-components-and-productions) to import the classes
 3. Enable RestExampleOperation, RestExampleBPL, and RestExampleService
 
 Every 30 seconds (the poll interval we set in our Service's configuration):
