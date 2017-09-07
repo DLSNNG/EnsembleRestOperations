@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:08:47">
+<Class name="DLS.REST.Example.InboundAdapter">
+<Description>
+Example Inbound Adapter to demonstrate DLS.REST.Operation usage</Description>
+<Super>Ens.InboundAdapter</Super>
+<TimeChanged>64531,46724.837964</TimeChanged>
+<TimeCreated>64531,46690.932051</TimeCreated>
+
+<Parameter name="SERVICEINPUTCLASS">
+<Description>
+Set the class that will be returned as Input to our Service</Description>
+<Default>Ens.StringRequest</Default>
+</Parameter>
+
+<Method name="OnTask">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set status = $$$OK
+	// This is where the real service would loop through globals or files and put their values into a message
+	// We're just pretending though, so we'll use a for loop and just pass the value of i into our message
+	For i=0:1:10 {
+		// Create new Message to pass to Service
+		Set tMsgIn = ##class(Ens.StringRequest).%New()
+		Set tMsgIn.StringValue = i
+		// Send the message to our Service for processing
+		Set tSC=..BusinessHost.ProcessInput(tMsgIn)
+		// Handle errors
+		If $$$ISERR(tSC) { Set status = tSC Break } 
+	}
+		
+	// Tell the Business Service to wait for the next call interval
+	// (Otherwise it will continuously call OnTask() once finished)
+	Set ..BusinessHost.%WaitForNextCallInterval = 1
+	Quit status
+]]></Implementation>
+</Method>
+</Class>
+</Export>

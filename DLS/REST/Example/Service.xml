@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:09:24">
+<Class name="DLS.REST.Example.Service">
+<Description>
+Example service to demonstrate DLS.REST.Operation usage</Description>
+<Super>Ens.BusinessService</Super>
+<TimeChanged>64531,51698.703527</TimeChanged>
+<TimeCreated>64531,46307.538456</TimeCreated>
+
+<Parameter name="ADAPTER">
+<Default>DLS.REST.Example.InboundAdapter</Default>
+</Parameter>
+
+<Property name="TargetConfigNames">
+<Description>
+Configuration item(s) to which to send messages</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="1000"/>
+</Property>
+
+<Parameter name="SETTINGS">
+<Default><![CDATA[TargetConfigNames:Basic:selector?multiSelect=1&context={Ens.ContextSearch/ProductionItems?targets=1&productionName=@productionId}]]></Default>
+</Parameter>
+
+<Method name="OnProcessInput">
+<FormalSpec>pInput:Ens.StringRequest,pOutput:%RegisteredObject</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	$$$TRACE("Calling "_$CLASSNAME($THIS))
+	// Loop through targets and send our input to them.
+	// Input is just a dummy value at the moment, used to trigger operations at a set interval
+	For iTarget=1:1:$L(..TargetConfigNames, ",") { Set tOneTarget=$ZStrip($P(..TargetConfigNames,",",iTarget),"<>W")  Continue:""=tOneTarget
+		$$$sysTRACE("Calling business operation '"_tOneTarget_"'")
+		Set tSC=..SendRequestSync(tOneTarget,pInput)
+	}
+	Quit tSC
+]]></Implementation>
+</Method>
+
+<Method name="OnGetConnections">
+<Description>
+Return an array of connections for drawing lines on the config diagram</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>*pArray:%String,pItem:Ens.Config.Item</FormalSpec>
+<Implementation><![CDATA[
+	Do ##super(.pArray,pItem)
+	If pItem.GetModifiedSetting("TargetConfigNames",.tValue) {
+		For i=1:1:$L(tValue,",") { Set tOne=$ZStrip($P(tValue,",",i),"<>W")  Continue:""=tOne  Set pArray(tOne)="" }
+	}
+]]></Implementation>
+</Method>
+</Class>
+</Export>

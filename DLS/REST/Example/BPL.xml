@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:09:57">
+<Class name="DLS.REST.Example.BPL">
+<Description>
+Example BPL to demonstrate usage of DLS.REST.Operation</Description>
+<Super>Ens.BusinessProcessBPL</Super>
+<TimeChanged>64531,54919.584335</TimeChanged>
+<TimeCreated>64531,46782.197564</TimeCreated>
+
+<XData name="BPL">
+<Description>
+BPL Definition</Description>
+<XMLNamespace>http://www.intersystems.com/bpl</XMLNamespace>
+<Data><![CDATA[
+<process language='objectscript' request='Ens.StringRequest' response='Ens.StringResponse' height='2000' width='2000' >
+<context>
+<property name='GetCommentsResponseString' type='%String' instantiate='0' >
+<parameters>
+<parameter name='MAXLEN'  value='2500' />
+</parameters>
+</property>
+</context>
+<sequence xend='200' yend='550' >
+<call name='Get Comments by PostId' target='RestExampleOperation' async='0' timeout='60' xpos='200' ypos='250' >
+<annotation><![CDATA[Makes a REST request to http://jsonplaceholder.typicode.com/comments?postId=X
+
+Where X is the stringValue of the request]]]]><![CDATA[></annotation>
+<request type='DLS.REST.Request' >
+<assign property="callrequest.FormVariables" value="&quot;postId=&quot;_request.StringValue_&quot;, test=testing&quot;" action="set" >
+<annotation><![CDATA[Pass in FormVariables to REST Operation based on the StringValue of our Ens.StringRequest]]]]><![CDATA[></annotation>
+</assign>
+</request>
+<response type='DLS.REST.Response' >
+<assign property="context.GetCommentsResponseString" value="callresponse.ServerResponse" action="set" >
+<annotation><![CDATA[Save server response to our BPL Context]]]]><![CDATA[></annotation>
+</assign>
+</response>
+</call>
+<trace name='Trace Comments' value='"Server responded with: "_context.GetCommentsResponseString' xpos='200' ypos='350' />
+<code name='Trace Posts' xpos='200' ypos='450' >
+<annotation><![CDATA[Use ServerResponse to construct an object and loop through properties.]]]]><![CDATA[></annotation>
+<![CDATA[
+  Set responseString = context.GetCommentsResponseString
+  Set responseObj = {}.$fromJSON(responseString)
+  Set iter = responseObj.$getIterator()
+  While iter.$getNext(.key, .comment) {
+    $$$TRACE("Comment with ID "_comment.id_" has body of "_comment.body)
+  }]]]]><![CDATA[>
+</code>
+</sequence>
+</process>
+]]></Data>
+</XData>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+</Storage>
+</Class>
+</Export>
