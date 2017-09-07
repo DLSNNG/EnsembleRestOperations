@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 12:58:04">
+<Class name="DLS.HTTP.OutboundAdapterV2">
+<Description>
+Modifies EnsLib.HTTP.OutboundAdapter to allow setting of content type used
+when making %Net.HTTPRequest</Description>
+<Super>EnsLib.HTTP.OutboundAdapter</Super>
+<TimeChanged>64533,46647.289173</TimeChanged>
+<TimeCreated>64533,44680.492802</TimeCreated>
+
+<Property name="ContentType">
+<Description>
+Content Type Header to be used with HTTP request.</Description>
+<Type>%String</Type>
+<InitialExpression>"application/json"</InitialExpression>
+<Parameter name="MAXLEN" value="1000"/>
+</Property>
+
+<Property name="CredentialsFallback">
+<Description>
+Fallback credentials to use in case primary credentials rejected</Description>
+<Type>%String</Type>
+<InitialExpression>"None"</InitialExpression>
+</Property>
+
+<Parameter name="SETTINGS">
+<Description>
+These are the production settings for this object</Description>
+<Default><![CDATA[RegistryID:Basic:selector?context={Ens.ServiceRegistry.External.ContextSearch/Services?Protocols_1=REST&Protocols_2=HTTP},HTTPServer:Basic,HTTPPort:Basic,SSLConfig:Connection:sslConfigSelector,SSLCheckServerIdentity:Connection,ProxyServer:Connection,ProxyPort:Connection,ProxyHTTPS:Connection,URL:Basic,Credentials:Basic:credentialsSelector,CredentialsFallback:Basic:credentialsSelector,ContentType:Basic,UseCookies,ConnectTimeout:Connection,ResponseTimeout:Connection]]></Default>
+</Parameter>
+
+<Method name="Post">
+<CodeMode>expression</CodeMode>
+<FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"POST",,.pFormVarNames,.pData)
+]]></Implementation>
+</Method>
+
+<Method name="Get">
+<CodeMode>expression</CodeMode>
+<FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"GET",,.pFormVarNames,.pData)
+]]></Implementation>
+</Method>
+
+<Method name="Put">
+<CodeMode>expression</CodeMode>
+<FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"PUT",,.pFormVarNames,.pData)
+]]></Implementation>
+</Method>
+
+<Method name="Delete">
+<CodeMode>expression</CodeMode>
+<FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"DELETE",,.pFormVarNames,.pData)
+]]></Implementation>
+</Method>
+</Class>
+</Export>
