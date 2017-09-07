@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:07:08">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:19:20">
 <Class name="DLS.REST.OperationV2">
 <Description>
 Extension of EnsLib.REST.Operation that uses DLS.HTTP.OutboundAdapter to 
@@ -12,7 +12,7 @@ Developers should aim to handle the request/response through the BPL logic, howe
 provided for situations where this needs to be done through the operation 
 (for example utilizing the adapter's credentialsObj).</Description>
 <Super>EnsLib.REST.Operation</Super>
-<TimeChanged>64533,45538.462139</TimeChanged>
+<TimeChanged>64533,47529.47409</TimeChanged>
 <TimeCreated>64531,48013.725935</TimeCreated>
 
 <Parameter name="ADAPTER">
@@ -114,15 +114,15 @@ and PopulatePayload() methods (with conditional logic based on the AttemptNumber
 <FormalSpec>pRequest:DLS.REST.Request,pResponse:DLS.REST.Response</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	$$$TRACE("Calling OnMessage of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling OnMessage of "_$CLASSNAME())
 	
 	//Set up the form variables that will be passed into our HTTP request
-	$$$TRACE("Calling PopulateFormVariables of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling PopulateFormVariables of "_$CLASSNAME())
 	Set formVariables = ..PopulateFormVariables(pRequest)
 	$$$TRACE("Form variables are "_formVariables)
 	
 	// Set up the payload that will be passed in as our HTTP request body
-	$$$TRACE("Calling PopulatePayload of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling PopulatePayload of "_$CLASSNAME())
 	Set payload = ..PopulatePayload(pRequest)
 	$$$TRACE("Assigning payload as HTTP request body "_payload)
 	
@@ -169,7 +169,7 @@ and PopulatePayload() methods (with conditional logic based on the AttemptNumber
 	}
 	
 	// Handle Response Object
-	$$$TRACE("Calling HandleResponse of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling HandleResponse of "_$CLASSNAME())
 	Set pResponse = ..HandleResponse(responseString)
 	
 	// Cleanup/reset state

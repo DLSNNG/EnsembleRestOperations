@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 12:54:22">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:14:28">
 <Class name="DLS.HTTP.OutboundAdapterV2">
 <Description>
 Modifies EnsLib.HTTP.OutboundAdapter to allow setting of content type used
 when making %Net.HTTPRequest</Description>
 <Super>EnsLib.HTTP.OutboundAdapter</Super>
-<TimeChanged>64533,44702.351294</TimeChanged>
+<TimeChanged>64533,47007.517461</TimeChanged>
 <TimeCreated>64533,44680.492802</TimeCreated>
 
 <Property name="ContentType">
@@ -176,7 +176,7 @@ Set the class that will be returned as Input to our Service</Description>
 <Description>
 Example service to demonstrate DLS.REST.Operation usage</Description>
 <Super>Ens.BusinessService</Super>
-<TimeChanged>64531,51698.703527</TimeChanged>
+<TimeChanged>64533,47566.316925</TimeChanged>
 <TimeCreated>64531,46307.538456</TimeCreated>
 
 <Parameter name="ADAPTER">
@@ -198,7 +198,7 @@ Configuration item(s) to which to send messages</Description>
 <FormalSpec>pInput:Ens.StringRequest,pOutput:%RegisteredObject</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	$$$TRACE("Calling "_$CLASSNAME($THIS))
+	$$$TRACE("Calling "_$CLASSNAME())
 	// Loop through targets and send our input to them.
 	// Input is just a dummy value at the moment, used to trigger operations at a set interval
 	For iTarget=1:1:$L(..TargetConfigNames, ",") { Set tOneTarget=$ZStrip($P(..TargetConfigNames,",",iTarget),"<>W")  Continue:""=tOneTarget
@@ -236,7 +236,7 @@ Developers should aim to handle the request/response through the BPL logic, howe
 provided for situations where this needs to be done through the operation 
 (for example utilizing the adapter's credentialsObj).</Description>
 <Super>EnsLib.REST.Operation</Super>
-<TimeChanged>64533,45538.462139</TimeChanged>
+<TimeChanged>64533,47529.47409</TimeChanged>
 <TimeCreated>64531,48013.725935</TimeCreated>
 
 <Parameter name="ADAPTER">
@@ -338,15 +338,15 @@ and PopulatePayload() methods (with conditional logic based on the AttemptNumber
 <FormalSpec>pRequest:DLS.REST.Request,pResponse:DLS.REST.Response</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	$$$TRACE("Calling OnMessage of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling OnMessage of "_$CLASSNAME())
 	
 	//Set up the form variables that will be passed into our HTTP request
-	$$$TRACE("Calling PopulateFormVariables of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling PopulateFormVariables of "_$CLASSNAME())
 	Set formVariables = ..PopulateFormVariables(pRequest)
 	$$$TRACE("Form variables are "_formVariables)
 	
 	// Set up the payload that will be passed in as our HTTP request body
-	$$$TRACE("Calling PopulatePayload of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling PopulatePayload of "_$CLASSNAME())
 	Set payload = ..PopulatePayload(pRequest)
 	$$$TRACE("Assigning payload as HTTP request body "_payload)
 	
@@ -393,7 +393,7 @@ and PopulatePayload() methods (with conditional logic based on the AttemptNumber
 	}
 	
 	// Handle Response Object
-	$$$TRACE("Calling HandleResponse of "_$CLASSNAME($THIS))
+	$$$TRACE("Calling HandleResponse of "_$CLASSNAME())
 	Set pResponse = ..HandleResponse(responseString)
 	
 	// Cleanup/reset state
@@ -470,8 +470,8 @@ Holds information passed back by the Server as a response to a REST request
 </Class>
 
 
-<Project name="EnsExportItem_2017-09-07 12-53-11_035-10" LastModified="2017-09-07 12:54:22.782222">
-  <ProjectDescription>Studio Project generated starting from Ensemble Production Configuration Item 'DLS.PRODUCTION.Development : RestExampleBPL' at 2017-09-07 22:53:11.035 UTC</ProjectDescription>
+<Project name="EnsExportItem_2017-09-07 13-13-33_547-10" LastModified="2017-09-07 13:14:28.90663">
+  <ProjectDescription>Studio Project generated starting from Ensemble Production Configuration Item 'DLS.PRODUCTION.Development : RestExampleBPL' at 2017-09-07 23:13:33.547 UTC</ProjectDescription>
   <Items>
     <ProjectItem name="DLS.HTTP.OutboundAdapterV2" type="CLS"></ProjectItem>
     <ProjectItem name="DLS.REST.Example.BPL" type="CLS"></ProjectItem>
@@ -483,12 +483,12 @@ Holds information passed back by the Server as a response to a REST request
     <ProjectItem name="Settings:RestExampleBPL.PTD" type="PTD"></ProjectItem>
     <ProjectItem name="Settings:RestExampleOperation.PTD" type="PTD"></ProjectItem>
     <ProjectItem name="Settings:RestExampleService.PTD" type="PTD"></ProjectItem>
-    <ProjectItem name="EnsExportNotes.EnsExportItem_2017-09-07 12-53-11_035-10.PTD" type="PTD"></ProjectItem>
+    <ProjectItem name="EnsExportNotes.EnsExportItem_2017-09-07 13-13-33_547-10.PTD" type="PTD"></ProjectItem>
   </Items>
 </Project>
 
 
-<Document name="EnsExportNotes.EnsExportItem_2017-09-07 12-53-11_035-10.PTD"><ProjectTextDocument name="EnsExportNotes.EnsExportItem_2017-09-07 12-53-11_035-10" description="Export Notes for export EnsExportItem_2017-09-07 12-53-11_035-10">
+<Document name="EnsExportNotes.EnsExportItem_2017-09-07 13-13-33_547-10.PTD"><ProjectTextDocument name="EnsExportNotes.EnsExportItem_2017-09-07 13-13-33_547-10" description="Export Notes for export EnsExportItem_2017-09-07 13-13-33_547-10">
 <![CDATA[<Deployment>
 <Creation>
 <Machine>HS-TEST.DLABS.COM</Machine>
@@ -496,12 +496,12 @@ Holds information passed back by the Server as a response to a REST request
 <Namespace>ENSDEV</Namespace>
 <SourceProduction>DLS.PRODUCTION.Development</SourceProduction>
 <Username>nathann</Username>
-<UTC>2017-09-07 22:54:22.764</UTC>
+<UTC>2017-09-07 23:14:28.896</UTC>
 </Creation>
 <Notes>
 </Notes>
 <Contents>
-<ExportProject>EnsExportItem_2017-09-07 12-53-11_035-10</ExportProject>
+<ExportProject>EnsExportItem_2017-09-07 13-13-33_547-10</ExportProject>
 <Item num="1">DLS.HTTP.OutboundAdapterV2.CLS</Item>
 <Item num="2">DLS.REST.Example.BPL.CLS</Item>
 <Item num="3">DLS.REST.Example.InboundAdapter.CLS</Item>

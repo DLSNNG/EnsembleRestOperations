@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:09:24">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:18:53">
 <Class name="DLS.REST.Example.Service">
 <Description>
 Example service to demonstrate DLS.REST.Operation usage</Description>
 <Super>Ens.BusinessService</Super>
-<TimeChanged>64531,51698.703527</TimeChanged>
+<TimeChanged>64533,47566.316925</TimeChanged>
 <TimeCreated>64531,46307.538456</TimeCreated>
 
 <Parameter name="ADAPTER">
@@ -26,7 +26,7 @@ Configuration item(s) to which to send messages</Description>
 <FormalSpec>pInput:Ens.StringRequest,pOutput:%RegisteredObject</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	$$$TRACE("Calling "_$CLASSNAME($THIS))
+	$$$TRACE("Calling "_$CLASSNAME())
 	// Loop through targets and send our input to them.
 	// Input is just a dummy value at the moment, used to trigger operations at a set interval
 	For iTarget=1:1:$L(..TargetConfigNames, ",") { Set tOneTarget=$ZStrip($P(..TargetConfigNames,",",iTarget),"<>W")  Continue:""=tOneTarget
