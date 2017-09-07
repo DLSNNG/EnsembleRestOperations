@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 12:58:04">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:03:46">
 <Class name="DLS.HTTP.OutboundAdapterV2">
 <Description>
 Modifies EnsLib.HTTP.OutboundAdapter to allow setting of content type used
 when making %Net.HTTPRequest</Description>
 <Super>EnsLib.HTTP.OutboundAdapter</Super>
-<TimeChanged>64533,46647.289173</TimeChanged>
+<TimeChanged>64533,47007.517461</TimeChanged>
 <TimeCreated>64533,44680.492802</TimeCreated>
 
 <Property name="ContentType">
@@ -30,34 +30,47 @@ These are the production settings for this object</Description>
 </Parameter>
 
 <Method name="Post">
-<CodeMode>expression</CodeMode>
 <FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"POST",,.pFormVarNames,.pData)
+<Implementation><![CDATA[
+	Set httpRequest = ..GetHttpRequest()
+	Quit ..SendFormDataArray(.pHttpResponse,"POST",httpRequest,.pFormVarNames,.pData)
 ]]></Implementation>
 </Method>
 
 <Method name="Get">
-<CodeMode>expression</CodeMode>
 <FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"GET",,.pFormVarNames,.pData)
+<Implementation><![CDATA[
+	Set httpRequest = ..GetHttpRequest()
+	Quit ..SendFormDataArray(.pHttpResponse,"GET",httpRequest,.pFormVarNames,.pData)
 ]]></Implementation>
 </Method>
 
 <Method name="Put">
-<CodeMode>expression</CodeMode>
 <FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"PUT",,.pFormVarNames,.pData)
+<Implementation><![CDATA[
+	Set httpRequest = ..GetHttpRequest()
+	Quit ..SendFormDataArray(.pHttpResponse,"PUT",httpRequest,.pFormVarNames,.pData)
 ]]></Implementation>
 </Method>
 
 <Method name="Delete">
-<CodeMode>expression</CodeMode>
 <FormalSpec>*pHttpResponse:%Net.HttpResponse,pFormVarNames:%String,pData...</FormalSpec>
 <ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[..SendFormDataArray(.pHttpResponse,"DELETE",,.pFormVarNames,.pData)
+<Implementation><![CDATA[
+	Set httpRequest = ..GetHttpRequest()
+	Quit ..SendFormDataArray(.pHttpResponse,"DELETE",httpRequest,.pFormVarNames,.pData)
+]]></Implementation>
+</Method>
+
+<Method name="GetHttpRequest">
+<ReturnType>%Net.HttpRequest</ReturnType>
+<Implementation><![CDATA[
+	Set request = ##class(%Net.HttpRequest).%New()
+	Set request.ContentType = ..ContentType
+	Quit request
 ]]></Implementation>
 </Method>
 </Class>
