@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 13:19:20">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.1.2 (Build 208U)" ts="2017-09-07 14:20:09">
 <Class name="DLS.REST.OperationV2">
 <Description>
 Extension of EnsLib.REST.Operation that uses DLS.HTTP.OutboundAdapter to 
@@ -12,7 +12,7 @@ Developers should aim to handle the request/response through the BPL logic, howe
 provided for situations where this needs to be done through the operation 
 (for example utilizing the adapter's credentialsObj).</Description>
 <Super>EnsLib.REST.Operation</Super>
-<TimeChanged>64533,47529.47409</TimeChanged>
+<TimeChanged>64533,50461.653589</TimeChanged>
 <TimeCreated>64531,48013.725935</TimeCreated>
 
 <Parameter name="ADAPTER">
@@ -32,13 +32,6 @@ The HTTP verb to be used when sending a REST request</Description>
 <Type>%String</Type>
 <InitialExpression>"GET"</InitialExpression>
 <Parameter name="VALUELIST" value=",GET,POST,PUT,DELETE"/>
-</Property>
-
-<Property name="AttemptNumber">
-<Description>
-Flag used to track the number of attempts made</Description>
-<Type>%Integer</Type>
-<InitialExpression>1</InitialExpression>
 </Property>
 
 <Method name="PopulateFormVariables">
@@ -95,21 +88,6 @@ the server provided.</Description>
 ]]></Implementation>
 </Method>
 
-<Method name="RetryRequired">
-<Description>
-Developers may override this method in order to provide their own logic for determining whether
-another (potentially modified) request should be made to the REST endpoint. Any modifications to
-the payload or form variables on a retry should be handled via the PopulateFormVariables() 
-and PopulatePayload() methods (with conditional logic based on the AttemptNumber) </Description>
-<FormalSpec>pServerResponse:%String</FormalSpec>
-<ReturnType>%Boolean</ReturnType>
-<Implementation><![CDATA[
-	// Return false by default, but this hook allows developers to provide
-	// their own logic on when a retry should be attmepted
-	Return 0
-]]></Implementation>
-</Method>
-
 <Method name="OnMessage">
 <FormalSpec>pRequest:DLS.REST.Request,pResponse:DLS.REST.Response</FormalSpec>
 <ReturnType>%Status</ReturnType>
@@ -159,30 +137,11 @@ and PopulatePayload() methods (with conditional logic based on the AttemptNumber
 	Set responseString = tHttpResponse.Data.Read(100000) //TODO: need to determine max length of string that can be sent and update this accordingly
 	$$$TRACE("Server Response = "_responseString)
 	
-	// Check if retry required
-	If ..RetryRequired(responseString) {
-		// increment attempt number
-		Set ..AttemptNumber = ..AttemptNumber + 1
-		// use recursive function to loop until RetryRequired() returns false
-		Set status = ..OnMessage(pRequest, pResponse)
-		Quit status
-	}
-	
 	// Handle Response Object
 	$$$TRACE("Calling HandleResponse of "_$CLASSNAME())
 	Set pResponse = ..HandleResponse(responseString)
 	
-	// Cleanup/reset state
-	Do ..OnMessageProcessed()
-	
 	Quit status
-]]></Implementation>
-</Method>
-
-<Method name="OnMessageProcessed">
-<Description>
-Reset after message has been processed</Description>
-<Implementation><![CDATA[	Set ..AttemptNumber = 1
 ]]></Implementation>
 </Method>
 </Class>
